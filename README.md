@@ -10,9 +10,18 @@ Login → Chat Interface → Conversation → Pixel Extraction → Pixel Map Upd
 ```
 
 
-**The bigger vision:** Your pixel map becomes a personal data asset you own. As it grows richer, content platforms can query it ("Is this a match for this user?") without ever seeing your actual data - just getting yes/no answers. This breaks data monopolies and returns algorithmic control to users.
+**The Bigger Vision:**
+
+Pixel maps unlock multiple possibilities:
+
+**For Personal Growth:** See your beliefs reflected back to you - what you carry becomes visible, making it easier to unlearn patterns that no longer serve you. Your mental structure travels with you across conversations, providing genuine continuity.
+
+**For Data Ownership:** Your pixel map becomes a personal asset you own and control. As it grows richer, content platforms can query it ("Is this content a match for this user?") without ever seeing your actual data - just receiving match scores. This breaks data monopolies and returns algorithmic control to users. Over time, multiple deposit methods will emerge beyond LLM conversations - making your pixel map a living representation of who you are.
+
+**For AI Alignment:** We believe pixel maps are the beginning of something significant. Imagine AI agents having their own pixel maps - filters through which their experience and outputs flow. Observers could see which beliefs and past experiences shape each response, addressing the black box problem. Perhaps AI can, like humans, move through developmental stages - allowing alignment to emerge as an organic byproduct of maturation, rather than being bolted on at the end through rigid prompting rules that leave us perpetually one step behind.
 
 **Demo at Edge City:** 2-week build showcasing the core developmental companion with real-time pixel extraction and visualization.
+
 
 ---
 
