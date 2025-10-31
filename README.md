@@ -8,7 +8,7 @@ Login → Chat → Extract Beliefs → See What You Carry → Question Patterns 
 ```
 
 **How it works:**  
-You chat naturally. The system extracts discrete beliefs. You see them visualized. Over time, you notice patterns - beliefs that contradict, beliefs that limit, beliefs you inherited but never chose. The AI guides you gently: "What's this costing you?" Seeing clearly is the first step to letting go.
+You chat naturally. The system extracts discrete beliefs. You see them visualized. Over time, you notice patterns - beliefs that contradict, beliefs that limit, beliefs you inherited but never chose. The AI guides you gently to unlearn and become lighter.
 
 ---
 
