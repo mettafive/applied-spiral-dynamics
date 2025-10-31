@@ -4,6 +4,12 @@
 
 We're building an AI companion that maps your belief structure through natural conversation. Unlike standard chatbots that forget context, this system extracts "belief pixels" from your conversations, visualizes them in a 3D space organized by developmental stage (Spiral Dynamics), and uses this accumulated understanding to provide increasingly personalized guidance over time.
 
+
+```
+Login → Chat Interface → Conversation → Pixel Extraction → Pixel Map Updates → Contextual Responses
+```
+
+
 **The bigger vision:** Your pixel map becomes a personal data asset you own. As it grows richer, content platforms can query it ("Is this a match for this user?") without ever seeing your actual data - just getting yes/no answers. This breaks data monopolies and returns algorithmic control to users.
 
 **Demo at Edge City:** 2-week build showcasing the core developmental companion with real-time pixel extraction and visualization.
