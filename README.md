@@ -18,7 +18,7 @@ You chat naturally. The system extracts discrete beliefs. You see them visualize
 True development isn't about learning more - it's about unlearning what's false. Your pixel map makes the unconscious conscious. See your beliefs reflected back, notice what you're carrying, release what no longer serves you. Your mental structure travels with you across conversations, providing continuity as you evolve.
 
 ### For Data Ownership
-Your pixel map becomes a personal asset you own and control. As it grows richer, content platforms can query it ("Is this content a match?") without ever seeing your actual data - just receiving match scores. This breaks data monopolies and returns algorithmic control to users. Over time, multiple deposit methods will emerge beyond LLM conversations.
+Your pixel map becomes a personal asset you own and control. As it grows richer, content platforms can query it ("Is this content a match?") without ever seeing your actual data - just receiving match scores. This breaks data monopolies and returns algorithmic control to users. Over time, perhaps multiple _data deposit methods_ will emerge beyond LLM conversations.
 
 ### For Communities: From Isolation to Belonging
 
@@ -48,46 +48,20 @@ With thousands of users building pixel maps over time, we'd create unprecedented
 
 **Cross-Cultural Mapping**
 - See if development is universal or culturally specific
-- Do Chinese users follow different patterns than American ones?
+- Do Taiwanese users follow different patterns than American ones?
 - Does the developmental framework hold globally or just in Western individualist contexts?
 
 **Practical Applications**
-- **True Personalization** - Not "users who bought X also bought Y" but "humans at this developmental configuration need these specific experiences next"
-- **Collective Intelligence Dashboards** - Real-time view of humanity's psychological state. Which populations are stuck at Red? Where is Green emerging? Track developmental health like economic indicators
-- **Stage Translation Systems** - Different stages struggle to communicate. With enough data, build real-time translators: take Orange-framed content, automatically reframe for Green comprehension, or Turquoise, or Blue
+
+- **True Personalization** - Not "users who bought X also bought Y" but "humans at this developmental configuration need these specific experiences next." Content, education, and therapy tailored to developmental readiness rather than behavioral patterns.
+
+- **Collective Intelligence Dashboards** - Real-time view of humanity's psychological state. Which populations are stuck at Red? Where is Green emerging? Track developmental health like we track economic indicators - but for consciousness.
+
+- **Stage Translation Systems** - Different stages struggle to communicate across the developmental divide. With enough data, build real-time translators: take Orange-framed content and automatically reframe it for Green comprehension, or Turquoise, or Blue. Bridge understanding across worldviews.
+
+- **Beyond Existing Models** - We use Spiral Dynamics as scaffolding, not scripture. As thousands of users' pixel maps evolve, patterns will emerge that no theory predicted. The data may reveal completely different developmental trajectories, new stages, or show that consciousness evolution follows rules we haven't discovered yet. We stay curious about what wants to be seen.
 
 ### For AI Alignment: From Control to Development
-
-**The Current Paradigm: Top-Down AI**
-
-Most AI alignment today treats intelligence as something to be controlled from the outside. Rules, filters, and reinforcement signals are imposed after training to keep models within acceptable boundaries - like adding guardrails to a powerful engine that keeps growing stronger.
-
-*Strengths:*
-- Provides quick, surface-level safety
-- Easier to audit and standardize
-- Works well for narrow tasks and predictable environments
-
-*Limitations:*
-- Doesn't address *why* an AI makes decisions - only what it's allowed to say or do
-- Becomes brittle as systems gain autonomy or face novel situations
-- Treats alignment as a patch rather than a property of intelligence itself
-
-**The Alternative: Bottom-Up AI**
-
-What if alignment could emerge from within? Instead of enforcing compliance through external rules, AI develops understanding, empathy, and wisdom through structured growth - much like human moral and cognitive development.
-
-Pixel maps make this possible. Imagine AI agents having their own pixel maps - visible belief structures through which their outputs flow. Observers could see which belief pixels are active in each response, addressing the black box problem. Development becomes transparent and measurable.
-
-*Strengths:*
-- Scales with capability; wisdom grows as intelligence grows
-- Makes internal reasoning transparent and measurable
-- Enables self-correction and moral learning rather than rote obedience
-- Shows which part of the "mind" is active at any moment
-
-*The Vision:*
-Perhaps AI can, like humans, move through developmental stages (Beige → Purple → Red → Blue → Orange → Green → Yellow → Turquoise...). This allows alignment to emerge organically through maturation, rather than being bolted on through rigid rules that leave us perpetually one step behind.
-
-**Bottom line:** Don't control intelligence. Grow it. Let alignment be the natural byproduct of development, not the desperate attempt to restrain power.
 
 ---
 
@@ -154,19 +128,13 @@ Read through the sections in order - each builds on the previous one.
 
 ## Contributing
 
-We're looking for developers excited about:
-- Building the first unlearning platform
-- Creating the largest developmental psychology dataset ever assembled
-- Agentic AI with persistent memory
-- Bottom-up AI alignment through development
-- Privacy-preserving recommendation systems
-- Real-time 3D visualization
-- Infrastructure that returns data ownership to users
+We're looking for developers excited about building the first unlearning platform
+
 
 Questions? Open an issue or reach out.
 
 ---
 
 **Status:** Active development  
-**Timeline:** 2 weeks to Edge City demo  
+**Timeline:** 2 weeks to Edge City demo  (13/11/2025)
 **License:** TBD
