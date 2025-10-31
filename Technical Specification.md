@@ -1,4 +1,4 @@
-# Technical Specification: Developmental Companion
+# Section 1: Technical Specification: Developmental Companion
 
 **Version:** 1.0  
 **Date:** October 30, 2025  
