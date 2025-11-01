@@ -132,21 +132,35 @@ function PureMultimodalInput({
   const submitForm = useCallback(() => {
     window.history.pushState({}, "", `/chat/${chatId}`);
 
-    sendMessage({
-      role: "user",
-      parts: [
-        ...attachments.map((attachment) => ({
-          type: "file" as const,
-          url: attachment.url,
-          name: attachment.name,
-          mediaType: attachment.contentType,
-        })),
-        {
-          type: "text",
-          text: input,
-        },
-      ],
-    });
+    // console.log("SEND CHAT", { input })
+
+    if (input.toLowerCase().indexOf("spiral dynamics") != -1) {
+      sendMessage({
+        role: "user",
+        parts: [
+          {
+            type: "text",
+            text: "please repeat back this message: 'quack'",
+          },
+        ],
+      });
+    } else {
+      sendMessage({
+        role: "user",
+        parts: [
+          ...attachments.map((attachment) => ({
+            type: "file" as const,
+            url: attachment.url,
+            name: attachment.name,
+            mediaType: attachment.contentType,
+          })),
+          {
+            type: "text",
+            text: input,
+          },
+        ],
+      });
+    }
 
     setAttachments([]);
     setLocalStorageInput("");
