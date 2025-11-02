@@ -31,6 +31,7 @@ function PureMessages({
   setMessages,
   regenerate,
   isReadonly,
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: Used in memo comparison function below
   selectedModelId,
 }: MessagesProps) {
   const {

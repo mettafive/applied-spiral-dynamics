@@ -6,6 +6,7 @@ import {
   jsonb,
   pgTable,
   primaryKey,
+  real,
   text,
   timestamp,
   uuid,
@@ -171,3 +172,95 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+export const pixel = pgTable("Pixel", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  chatId: uuid("chatId")
+    .notNull()
+    .references(() => chat.id),
+  messageId: uuid("messageId")
+    .notNull()
+    .references(() => message.id),
+
+  // Core belief data
+  statement: text("statement").notNull(),
+  context: text("context").notNull(),
+  explanation: text("explanation").notNull(),
+
+  // Spiral Dynamics scoring
+  colorStage: jsonb("colorStage")
+    .$type<{
+      beige: number;
+      purple: number;
+      red: number;
+      blue: number;
+      orange: number;
+      green: number;
+      yellow: number;
+      turquoise: number;
+      coral: number;
+      teal: number;
+    }>()
+    .notNull(),
+
+  // Metadata
+  confidenceScore: real("confidenceScore").notNull(),
+  tooNuanced: boolean("tooNuanced").notNull().default(false),
+  absoluteThinking: boolean("absoluteThinking").notNull().default(false),
+  archived: boolean("archived").notNull().default(false),
+
+  // Legacy/debug
+  content: jsonb("content"),
+  embedding: text("embedding"),
+  chromaId: text("chromaId").notNull(),
+
+  userId: uuid("userId")
+    .notNull()
+    .references(() => user.id),
+  createdAt: timestamp("createdAt").notNull(),
+  updatedAt: timestamp("updatedAt").notNull(),
+});
+
+export type Pixel = InferSelectModel<typeof pixel>;
+
+export const pixelHistory = pgTable("PixelHistory", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  pixelId: uuid("pixelId")
+    .notNull()
+    .references(() => pixel.id),
+  statement: text("statement").notNull(),
+  colorStage: jsonb("colorStage").notNull(),
+  confidenceScore: real("confidenceScore").notNull(),
+  changeReason: text("changeReason"),
+  timestamp: timestamp("timestamp").notNull(),
+});
+
+export type PixelHistory = InferSelectModel<typeof pixelHistory>;
+
+export const pixelFamily = pgTable("PixelFamily", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => user.id),
+  name: text("name"),
+  createdAt: timestamp("createdAt").notNull(),
+});
+
+export type PixelFamily = InferSelectModel<typeof pixelFamily>;
+
+export const pixelFamilyMember = pgTable(
+  "PixelFamilyMember",
+  {
+    familyId: uuid("familyId")
+      .notNull()
+      .references(() => pixelFamily.id),
+    pixelId: uuid("pixelId")
+      .notNull()
+      .references(() => pixel.id),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.familyId, table.pixelId] }),
+  })
+);
+
+export type PixelFamilyMember = InferSelectModel<typeof pixelFamilyMember>;

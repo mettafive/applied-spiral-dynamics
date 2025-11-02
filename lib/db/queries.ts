@@ -25,6 +25,8 @@ import {
   type DBMessage,
   document,
   message,
+  pixel,
+  pixelHistory,
   type Suggestion,
   stream,
   suggestion,
@@ -41,6 +43,46 @@ import { generateHashedPassword } from "./utils";
 // biome-ignore lint: Forbidden non-null assertion.
 const client = postgres(process.env.POSTGRES_URL!);
 const db = drizzle(client);
+
+// Export for health checks and other utilities
+export { db };
+
+// UUID validation regex
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function validateUUID(id: string, fieldName = "id"): void {
+  if (!id || typeof id !== "string") {
+    throw new ChatSDKError(
+      "bad_request:api",
+      `Invalid ${fieldName}: must be a string`
+    );
+  }
+
+  if (!UUID_REGEX.test(id)) {
+    throw new ChatSDKError(
+      "bad_request:api",
+      `Invalid ${fieldName}: must be a valid UUID`
+    );
+  }
+}
+
+function validateUUIDs(ids: string[], fieldName = "ids"): void {
+  if (!Array.isArray(ids)) {
+    throw new ChatSDKError(
+      "bad_request:api",
+      `Invalid ${fieldName}: must be an array`
+    );
+  }
+
+  if (ids.length === 0) {
+    return; // Empty array is valid
+  }
+
+  for (const id of ids) {
+    validateUUID(id, fieldName);
+  }
+}
 
 export async function getUser(email: string): Promise<User[]> {
   try {
@@ -109,6 +151,7 @@ export async function deleteChatById({ id }: { id: string }) {
     await db.delete(vote).where(eq(vote.chatId, id));
     await db.delete(message).where(eq(message.chatId, id));
     await db.delete(stream).where(eq(stream.chatId, id));
+    await db.delete(pixel).where(eq(pixel.chatId, id));
 
     const [chatsDeleted] = await db
       .delete(chat)
@@ -134,11 +177,12 @@ export async function deleteAllChatsByUserId({ userId }: { userId: string }) {
       return { deletedCount: 0 };
     }
 
-    const chatIds = userChats.map(c => c.id);
+    const chatIds = userChats.map((c) => c.id);
 
     await db.delete(vote).where(inArray(vote.chatId, chatIds));
     await db.delete(message).where(inArray(message.chatId, chatIds));
     await db.delete(stream).where(inArray(stream.chatId, chatIds));
+    await db.delete(pixel).where(inArray(pixel.chatId, chatIds));
 
     const deletedChats = await db
       .delete(chat)
@@ -589,5 +633,180 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
       "bad_request:database",
       "Failed to get stream ids by chat id"
     );
+  }
+}
+
+export async function savePixel(params: {
+  chatId: string;
+  messageId: string;
+  chromaId: string;
+  userId: string;
+  statement: string;
+  context: string;
+  explanation: string;
+  colorStage: unknown;
+  confidenceScore: number;
+  tooNuanced: boolean;
+  absoluteThinking: boolean;
+  content?: unknown;
+  embedding?: string;
+}) {
+  try {
+    return await db.insert(pixel).values({
+      chatId: params.chatId,
+      messageId: params.messageId,
+      chromaId: params.chromaId,
+      userId: params.userId,
+      statement: params.statement,
+      context: params.context,
+      explanation: params.explanation,
+      colorStage: params.colorStage,
+      confidenceScore: params.confidenceScore,
+      tooNuanced: params.tooNuanced,
+      absoluteThinking: params.absoluteThinking,
+      content: params.content,
+      embedding: params.embedding,
+      archived: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  } catch (_error) {
+    throw new ChatSDKError("bad_request:database", "Failed to save pixel");
+  }
+}
+
+export async function getPixelsByChatId(params: { chatId: string }) {
+  try {
+    return await db
+      .select()
+      .from(pixel)
+      .where(eq(pixel.chatId, params.chatId))
+      .orderBy(asc(pixel.createdAt));
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to get pixels by chat id"
+    );
+  }
+}
+
+export async function getPixelsByUserId(params: {
+  userId: string;
+  limit?: number;
+}) {
+  const { userId, limit: queryLimit = 100 } = params;
+
+  try {
+    return await db
+      .select()
+      .from(pixel)
+      .where(eq(pixel.userId, userId))
+      .orderBy(desc(pixel.createdAt))
+      .limit(queryLimit);
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to get pixels by user id"
+    );
+  }
+}
+
+export async function getPixelsByIds(params: { ids: string[] }) {
+  validateUUIDs(params.ids, "pixel IDs");
+
+  try {
+    return await db.select().from(pixel).where(inArray(pixel.id, params.ids));
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to get pixels by ids"
+    );
+  }
+}
+
+export async function updatePixelConfidence(params: {
+  pixelId: string;
+  confidenceScore: number;
+  reason?: string;
+}) {
+  const { pixelId, confidenceScore, reason } = params;
+
+  validateUUID(pixelId, "pixel ID");
+
+  if (
+    typeof confidenceScore !== "number" ||
+    confidenceScore < 0 ||
+    confidenceScore > 1
+  ) {
+    throw new ChatSDKError(
+      "bad_request:api",
+      "Invalid confidenceScore: must be a number between 0 and 1"
+    );
+  }
+
+  try {
+    const [existingPixel] = await db
+      .select()
+      .from(pixel)
+      .where(eq(pixel.id, pixelId));
+
+    if (existingPixel) {
+      await db.insert(pixelHistory).values({
+        pixelId,
+        statement: existingPixel.statement,
+        colorStage: existingPixel.colorStage,
+        confidenceScore: existingPixel.confidenceScore,
+        changeReason: reason ?? "Confidence adjusted by Insight Model",
+        timestamp: new Date(),
+      });
+    }
+
+    return await db
+      .update(pixel)
+      .set({
+        confidenceScore,
+        updatedAt: new Date(),
+      })
+      .where(eq(pixel.id, pixelId));
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to update pixel confidence"
+    );
+  }
+}
+
+export async function archivePixel(params: { pixelId: string }) {
+  const { pixelId } = params;
+
+  validateUUID(pixelId, "pixel ID");
+
+  try {
+    const [existingPixel] = await db
+      .select()
+      .from(pixel)
+      .where(eq(pixel.id, pixelId));
+
+    if (existingPixel) {
+      await db.insert(pixelHistory).values({
+        pixelId,
+        statement: existingPixel.statement,
+        colorStage: existingPixel.colorStage,
+        confidenceScore: existingPixel.confidenceScore,
+        changeReason: "Archived due to transcendence",
+        timestamp: new Date(),
+      });
+    }
+
+    return await db
+      .update(pixel)
+      .set({
+        archived: true,
+        confidenceScore: 0,
+        updatedAt: new Date(),
+      })
+      .where(eq(pixel.id, pixelId));
+  } catch (_error) {
+    throw new ChatSDKError("bad_request:database", "Failed to archive pixel");
   }
 }

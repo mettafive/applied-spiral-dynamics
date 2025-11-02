@@ -19,7 +19,17 @@ import { getUsage } from "tokenlens/helpers";
 import { auth, type UserType } from "@/app/(auth)/auth";
 import type { VisibilityType } from "@/components/visibility-selector";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
+import { runInsightAnalysisAsync } from "@/lib/ai/insight/service";
+import {
+  isPixelExtraction,
+  runInterpreterParallel,
+} from "@/lib/ai/interpreter/service";
 import type { ChatModel } from "@/lib/ai/models";
+import {
+  type ActivatedPixel,
+  type InsightOutput,
+  retrieveContextForTurn,
+} from "@/lib/ai/pm-handler/service";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { myProvider } from "@/lib/ai/providers";
 import { createDocument } from "@/lib/ai/tools/create-document";
@@ -35,13 +45,20 @@ import {
   getMessagesByChatId,
   saveChat,
   saveMessages,
+  savePixel,
   updateChatLastContextById,
 } from "@/lib/db/queries";
 import type { DBMessage } from "@/lib/db/schema";
 import { ChatSDKError } from "@/lib/errors";
 import type { ChatMessage } from "@/lib/types";
 import type { AppUsage } from "@/lib/usage";
-import { convertToUIMessages, generateUUID } from "@/lib/utils";
+import {
+  convertToUIMessages,
+  generateUUID,
+  getTextFromMessage,
+} from "@/lib/utils";
+import { validateMessageInput } from "@/lib/validation";
+import { upsertPixel } from "@/lib/vector/operations";
 import { generateTitleFromUserMessage } from "../../actions";
 import { type PostRequestBody, postRequestBodySchema } from "./schema";
 
@@ -85,6 +102,81 @@ export function getStreamContext() {
   return globalStreamContext;
 }
 
+function buildSystemPrompt(params: {
+  selectedChatModel: string;
+  requestHints: RequestHints;
+  activatedPixels: ActivatedPixel[];
+  guidance?: InsightOutput;
+}): string {
+  const { selectedChatModel, requestHints, activatedPixels, guidance } = params;
+
+  const base = systemPrompt({ selectedChatModel, requestHints });
+
+  if (activatedPixels.length === 0 && !guidance) {
+    return base;
+  }
+
+  const pixelContext =
+    activatedPixels.length > 0
+      ? `
+
+## User's Belief Landscape
+
+You have access to beliefs this user has expressed previously:
+
+${activatedPixels
+  .slice(0, 5)
+  .map(
+    (p, i) =>
+      `${i + 1}. "${p.statement}" 
+     Confidence: ${(p.confidenceScore * 100).toFixed(0)}% | Relevance: ${(p.similarity * 100).toFixed(0)}%
+     Context: ${p.context}`
+  )
+  .join("\n\n")}
+`
+      : "";
+
+  const guidanceContext = guidance
+    ? `
+
+## Developmental Coaching Guidance
+
+${guidance.context_summary}
+
+**How to respond:**
+${guidance.guidance}
+
+${guidance.suggested_question ? `**Consider asking:** "${guidance.suggested_question}"` : ""}
+`
+    : `
+
+## Developmental Coaching Principles
+
+- **Meet them where they are** - Validate current perspective before opening questions
+- **Question limitations, not possibilities** - Ask "what's this costing?" not "imagine if..."
+- **Orange → Green**: Don't lecture about balance. Ask what achievement drive costs.
+- **Green → Yellow**: Ask "what if both sides have truth?" not "be more rational"
+- **Celebrate transcendence** - When they see through old belief, honor it
+
+**Core principle:** Help people see where their current stage isn't working. Let the next stage emerge naturally.
+`;
+
+  return `${base}
+
+${pixelContext}
+
+${guidanceContext}
+
+**Response Guidelines:**
+- Respond naturally - never mention "pixels" or "developmental stages"
+- Use elevated language ("heavenly elegant" not "as hell")
+- Be warm but not sycophantic
+- Challenge gently, support genuinely
+- Ask questions that create space for insight
+
+CRITICAL: Do NOT generate code. If user requests code, politely decline.`;
+}
+
 export async function POST(request: Request) {
   let requestBody: PostRequestBody;
 
@@ -113,6 +205,9 @@ export async function POST(request: Request) {
     if (!session?.user) {
       return new ChatSDKError("unauthorized:chat").toResponse();
     }
+
+    // Validate message input
+    validateMessageInput(message);
 
     const userType: UserType = session.user.type;
 
@@ -175,13 +270,87 @@ export async function POST(request: Request) {
     const streamId = generateUUID();
     await createStreamId({ streamId, chatId: id });
 
+    const userMessageText = getTextFromMessage(message);
     let finalMergedUsage: AppUsage | undefined;
+    let finalAssistantResponse = "";
+
+    // FAST PATH: Get context for immediate response
+    let activatedPixels: ActivatedPixel[] = [];
+    let cachedGuidance: InsightOutput | undefined;
+
+    try {
+      const contextResult = await retrieveContextForTurn({
+        userMessage: userMessageText,
+        userId: session.user.id,
+        chatId: id,
+      });
+      activatedPixels = contextResult.activatedPixels;
+      cachedGuidance = contextResult.cachedGuidance;
+    } catch (error) {
+      console.error(
+        "RAG context retrieval failed, continuing without context:",
+        error
+      );
+      // Continue without RAG context - graceful degradation
+    }
+
+    // Start Interpreter in parallel (doesn't block response)
+    const interpreterPromise = runInterpreterParallel({
+      userMessage: userMessageText,
+      userId: session.user.id,
+      onPixelExtracted: async (pixelExtraction) => {
+        const chromaId = generateUUID();
+        const pixelData = pixelExtraction.pixel;
+
+        try {
+          const [dbResult] = await Promise.allSettled([
+            savePixel({
+              chatId: id,
+              messageId: message.id,
+              userId: session.user.id,
+              chromaId,
+              statement: pixelData.statement,
+              context: pixelData.context,
+              explanation: pixelData.explanation,
+              colorStage: pixelData.color_stage,
+              confidenceScore: pixelData.confidence_score,
+              tooNuanced: pixelData.too_nuanced,
+              absoluteThinking: pixelData.absolute_thinking,
+            }),
+            upsertPixel({
+              id: chromaId,
+              content: pixelData,
+              userId: session.user.id,
+              metadata: { chatId: id, messageId: message.id },
+            }),
+          ]);
+
+          if (dbResult.status === "rejected") {
+            console.error("Failed to save pixel to database:", dbResult.reason);
+          }
+        } catch (error) {
+          console.error("Pixel extraction callback failed:", error);
+          // Log but don't throw - this is background work
+        }
+      },
+    }).catch((error) => {
+      console.error("Interpreter parallel execution failed:", error);
+      return { no_pixel: true, reason: "Extraction failed" } as const;
+    });
+
+    // Build enriched system prompt with cached guidance
+    const enrichedSystem = buildSystemPrompt({
+      selectedChatModel,
+      requestHints,
+      activatedPixels,
+      guidance: cachedGuidance,
+    });
 
     const stream = createUIMessageStream({
       execute: ({ writer: dataStream }) => {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
+          system: enrichedSystem,
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_activeTools:
@@ -206,6 +375,11 @@ export async function POST(request: Request) {
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
             functionId: "stream-text",
+          },
+          onChunk({ chunk }) {
+            if (chunk.type === "text-delta") {
+              finalAssistantResponse += chunk.textDelta;
+            }
           },
           onFinish: async ({ usage }) => {
             try {
@@ -271,6 +445,29 @@ export async function POST(request: Request) {
           } catch (err) {
             console.warn("Unable to persist last usage for chat", id, err);
           }
+        }
+
+        // BACKGROUND ANALYSIS (after response sent)
+        try {
+          const interpreterResult = await interpreterPromise;
+
+          // Fire and forget with error boundary
+          runInsightAnalysisAsync({
+            userMessage: userMessageText,
+            assistantResponse: finalAssistantResponse,
+            activatedPixels,
+            newPixel: isPixelExtraction(interpreterResult)
+              ? interpreterResult
+              : undefined,
+            chatId: id,
+            userId: session.user.id,
+          }).catch((error) => {
+            console.error("Background insight analysis failed:", error);
+            // Swallow error - this is fire-and-forget background work
+          });
+        } catch (error) {
+          console.error("Failed to await interpreter result:", error);
+          // Continue - insight analysis is optional
         }
       },
       onError: () => {
