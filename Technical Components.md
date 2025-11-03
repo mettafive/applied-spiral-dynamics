@@ -344,16 +344,7 @@ INSERT INTO pixel_history (
 
 
 
-
-
-
-
-
-
-
-
-
-
+Main LLM System Prompt is moved to: [https://github.com/mettafive/applied-spiral-dynamics/tree/main](url)
 
 
 ---
