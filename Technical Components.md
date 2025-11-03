@@ -24,7 +24,8 @@ This section contains the detailed instruction documents (prompts) for each comp
 
 ### INTERPRETER INSTRUCTION DOCUMENT (DRAFT)
 
-Interpreter document moved to: 
+Interpreter document moved to: [https://github.com/mettafive/applied-spiral-dynamics/tree/main](url)
+
 
 ---
 
