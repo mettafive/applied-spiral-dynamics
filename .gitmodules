@@ -1,0 +1,3 @@
+[submodule "mvp/vercel-chatbot"]
+	path = mvp/vercel-chatbot
+	url = git@github.com:DefenderOfBasic/applied-spiral-dynamics-mvp.git
