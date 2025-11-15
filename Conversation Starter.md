@@ -1,8 +1,9 @@
 
 # How to use
 
-1) Drag in to any LLM chat (like Claude or ChatGPT) 
-2) Learn about Modern Spiral Dynamics
+1) Download or Copy the content of this file
+2) Drag in to any LLM chat (like Claude or ChatGPT) 
+3) Learn about Modern Spiral Dynamics
 
 
 # Modern Spiral Dynamics: Comprehensive Research Transmission
