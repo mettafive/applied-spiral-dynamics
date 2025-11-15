@@ -1,3 +1,10 @@
+
+# How to use
+
+1) Drag in to any LLM chat (like Claude or ChatGPT) 
+2) Learn about Modern Spiral Dynamics
+
+
 # Modern Spiral Dynamics: Comprehensive Research Transmission
 
 **A Conversation Starter for Learning Modern SD**
